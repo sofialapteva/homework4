@@ -3,7 +3,7 @@ defmodule Homework4Test do
   doctest Homework4
 
   test "initializes with a correct default state" do
-    {:ok, pid} = Homework4.start_link()
-    assert Homework4.get(pid) == %{state: :stopped}
+    Homework4.start_link()
+    assert Homework4.get() == :stopped
   end
 end

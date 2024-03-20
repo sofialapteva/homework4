@@ -3,63 +3,42 @@ defmodule Homework4 do
 
   ## Examples
 
-      iex> {:ok, pid} = Homework4.start_link()
-      iex> Homework4.get(pid)
-      %{state: :stopped}
-      iex> Homework4.transition(pid, :run_engine)
-      %{state: :idle}
-      iex> Homework4.transition(pid, :start_moving)
-      %{state: :moving}
-      iex> Homework4.transition(pid, :stowaway_jumps_on_the_bandwagon)
+      iex> Homework4.start_link()
+      iex> Homework4.get()
+      :stopped
+      iex> Homework4.transition(:run_engine)
       :ok
-      iex> Process.sleep(100)
-      iex> Homework4.get(pid)
-      %{state: :hijacked}
+      iex> Homework4.get()
+      :idle
+      iex> Homework4.transition(:start_moving)
+      :ok
+      iex> Homework4.get()
+      :moving
 
   """
 
   use GenServer
   # Client
   def hint do
-    IO.puts("Possible transitions:
-   :stopped -->:run_engine --> :idle
-   :idle -->:stop_engine --> :stopped
-   :idle -->:start_moving --> :movingmoving
-   :moving -->:stop_moving --> :idle
-   :idle -->:open_doors --> :boarding
-   :moving -->:stowaway_jumps_on_the_bandwagon --> :hijacked
-   :hijacked -->:ticket_inspector_evicts_a_stowaway --> :idle
-   :boarding -->:close_doors --> :idle
-   :moving -->:make_turn --> :moving")
+    IO.puts("""
+    Possible transitions:
+    :stopped -->|run_engine| :idle
+    :idle -->|stop_engine| :stopped
+    :idle -->|start_moving| :moving
+    :moving -->|stop_moving| :idle
+    :idle -->|open_doors| :boarding
+    :boarding -->|close_doors| :idle
+    :moving -->|make_turn| :moving
+    """)
   end
 
-  def start_link(initial_state \\ %{state: :stopped}) do
-    GenServer.start_link(__MODULE__, initial_state)
+  def start_link(initial_state \\ :stopped) do
+    GenServer.start_link(__MODULE__, initial_state, name: __MODULE__)
   end
 
-  def get(pid), do: GenServer.call(pid, :get_state)
+  def get(pid \\ __MODULE__), do: GenServer.call(pid, :get_state)
 
-  def transition(pid, :run_engine), do: GenServer.call(pid, :run_engine)
-
-  def transition(pid, :stop_engine), do: GenServer.call(pid, :stop_engine)
-
-  def transition(pid, :start_moving), do: GenServer.call(pid, :start_moving)
-
-  def transition(pid, :stop_moving), do: GenServer.call(pid, :stop_moving)
-
-  def transition(pid, :open_doors), do: GenServer.call(pid, :open_doors)
-
-  def transition(pid, :close_doors), do: GenServer.call(pid, :close_doors)
-
-  def transition(pid, :make_turn), do: GenServer.call(pid, :make_turn)
-
-  def transition(pid, :stowaway_jumps_on_the_bandwagon),
-    do: GenServer.cast(pid, :stowaway_jumps_on_the_bandwagon)
-
-  def transition(pid, :ticket_inspector_evicts_a_stowaway),
-    do: GenServer.cast(pid, :ticket_inspector_evicts_a_stowaway)
-
-  def transition(pid, event), do: GenServer.call(pid, event)
+  def transition(state, pid \\ __MODULE__), do: GenServer.cast(pid, state)
 
   # Server (callbacks)
 
@@ -69,76 +48,35 @@ defmodule Homework4 do
   end
 
   @impl true
-  def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
-  end
+  def handle_call(:get_state, _from, state), do: {:reply, state, state}
 
   @impl true
-  def handle_call(:run_engine, _from, state = %{state: :stopped}) do
-    state = Map.replace(state, :state, :idle)
-    {:reply, state, state}
-  end
+  def handle_cast(:run_engine, :stopped), do: {:noreply, :idle}
 
   @impl true
-  def handle_call(:stop_engine, _from, state = %{state: :idle}) do
-    state = Map.replace(state, :state, :stopped)
-    {:reply, state, state}
-  end
+  def handle_cast(:stop_engine, :idle), do: {:noreply, :stopped}
 
   @impl true
-  def handle_call(:start_moving, _from, state = %{state: :idle}) do
-    state = Map.replace(state, :state, :moving)
-    {:reply, state, state}
-  end
+  def handle_cast(:start_moving, :idle), do: {:noreply, :moving}
 
   @impl true
-  def handle_call(:stop_moving, _from, state = %{state: :moving}) do
-    state = Map.replace(state, :state, :idle)
-    {:reply, state, state}
-  end
+  def handle_cast(:stop_moving, :moving), do: {:noreply, :idle}
 
   @impl true
-  def handle_call(:open_doors, _from, state = %{state: :idle}) do
-    state = Map.replace(state, :state, :boarding)
-    {:reply, state, state}
-  end
+  def handle_cast(:open_doors, :idle), do: {:noreply, :boarding}
 
   @impl true
-  def handle_call(:close_doors, _from, state = %{state: :boarding}) do
-    state = Map.replace(state, :state, :idle)
-    {:reply, state, state}
-  end
+  def handle_cast(:close_doors, :boarding), do: {:noreply, :idle}
 
   @impl true
-  def handle_call(:make_turn, _from, state = %{state: :moving}) do
-    state = Map.replace(state, :state, :moving)
-    {:reply, state, state}
-  end
-
-  @impl true
-  def handle_call(event, _from, state) do
-    IO.warn(
-      "This is not a valid transition: there's no implementation of the transition from state :#{state.state} with event :#{event}"
-    )
-
-    {:reply, state, state}
-  end
-
-  @impl true
-  def handle_cast(:stowaway_jumps_on_the_bandwagon, state = %{state: :moving}) do
-    {:noreply, Map.replace(state, :state, :hijacked)}
-  end
-
-  @impl true
-  def handle_cast(:ticket_inspector_evicts_a_stowaway, state = %{state: :hijacked}) do
-    {:noreply, Map.replace(state, :state, :idle)}
-  end
+  def handle_cast(:make_turn, :moving), do: {:noreply, :moving}
 
   @impl true
   def handle_cast(event, state) do
-    IO.warn(
-      "This is not a valid transition: there's no implementation of the transition from state :#{state.state} with event :#{event}. \nPress Enter to continue."
-    )
+    IO.warn("""
+    This is not a valid transition.
+    There's no implementation of the transition from state :#{state} with event :#{event}.
+    """)
 
     {:noreply, state}
   end

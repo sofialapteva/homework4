@@ -9,8 +9,6 @@ flowchart TD
     B -->|open_doors| D[boarding]
     D -->|close_doors| B
     C -->|make_turn| C
-    C -->|stowaway_jumps_on_the_bandwagon| E[hijacked]
-    E -->|ticket_inspector_evicts_a_stowaway| B
 ```
 
 ## Installation
