@@ -1,6 +1,15 @@
 # Homework4
 
-**TODO: Add description**
+```mermaid
+flowchart TD
+    A[stopped] -->|run_engine| B[idle]
+    B -->|stop_engine| A
+    B -->|start_moving| C[moving]
+    C -->|stop_moving| B
+    B -->|open_doors| D[boarding]
+    D -->|close_doors| B
+    C -->|make_turn| C
+```
 
 ## Installation
 
@@ -18,4 +27,3 @@ end
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/homework4](https://hexdocs.pm/homework4).
-
